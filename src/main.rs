@@ -5,12 +5,15 @@ use std::{error::Error, net::SocketAddr};
 use axum::{Router, serve};
 use tokio::net::TcpListener;
 
+use crate::api::router;
+
 // Local Module Registry
+pub mod api;
 pub mod client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let app = Router::new();
+    let app = Router::new().nest("/api", router());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
     let listener = TcpListener::bind(addr).await?;
