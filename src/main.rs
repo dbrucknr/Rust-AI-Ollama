@@ -6,11 +6,14 @@ use axum::{Router, serve};
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 
+// Local Crates
 use crate::api::router;
 
 // Local Module Registry
 pub mod api;
 pub mod client;
+pub mod dto;
+pub mod errors;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

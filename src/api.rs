@@ -1,8 +1,11 @@
+// Standard Library Crates
+use std::sync::Arc;
+
+// Third Party Library Crates
 use axum::{
     Extension, Json, Router,
-    http::StatusCode,
     response::{
-        IntoResponse, Response, Sse,
+        Sse,
         sse::{Event, KeepAlive},
     },
     routing::{get, post},
@@ -12,37 +15,16 @@ use rig::{
     OneOrMany, completion::CompletionRequest, message::Message,
     providers::ollama::Message as OllamaMessage, streaming::StreamedAssistantContent,
 };
-use serde::Deserialize;
-use std::sync::Arc;
 use tokio_stream::StreamExt;
 
-use super::client::OllamaClient;
+// Local Crates
+use super::{client::OllamaClient, dto::IncomingMessage, errors::ApiError};
 
 pub fn router() -> Router {
     Router::new()
         .route("/", get(stream_response))
         .route("/", post(respond_to_message))
         .layer(Extension(Arc::new(OllamaClient::new())))
-}
-
-pub enum ApiError {
-    InternalServerError,
-}
-impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
-        match self {
-            ApiError::InternalServerError => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json("Something unexpected happened"),
-            ),
-        }
-        .into_response()
-    }
-}
-
-#[derive(Deserialize)]
-struct IncomingMessage {
-    content: String,
 }
 
 async fn respond_to_message(
@@ -72,6 +54,7 @@ async fn respond_to_message(
     }
 }
 
+// TODO: Turn this into a POST request
 async fn stream_response(
     Extension(client): Extension<Arc<OllamaClient>>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, ApiError> {
