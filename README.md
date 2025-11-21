@@ -3,7 +3,8 @@
 ### Dependencies
 
 - Rust Async Runtime: `cargo add tokio -F tokio/full`
-- Base AI Layer: `cargo add rig-core -F rig-core/ollama futures_util`
+- Futures (types and traits) `cargo add futures tokio-stream -F tokio-stream/sync`
+- Base AI Layer: `cargo add rig-core -F rig-core/ollama`
 - Backend API: `cargo add axum serde -F serde/derive`
 
 ### Resources

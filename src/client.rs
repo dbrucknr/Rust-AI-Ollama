@@ -1,7 +1,9 @@
 use rig::{
     client::CompletionClient,
-    completion::{CompletionError, CompletionModel, CompletionRequest},
-    providers::ollama::{Client, StreamingCompletionResponse as OllamaStream},
+    completion::{CompletionError, CompletionModel, CompletionRequest, CompletionResponse},
+    providers::ollama::{
+        Client, CompletionResponse as OllamaResponse, StreamingCompletionResponse as OllamaStream,
+    },
     streaming::StreamingCompletionResponse,
 };
 pub struct OllamaClient {
@@ -22,5 +24,13 @@ impl OllamaClient {
     ) -> Result<StreamingCompletionResponse<OllamaStream>, CompletionError> {
         let model = self.client.completion_model(&self.model_name);
         model.stream(request).await
+    }
+
+    pub async fn generate_reply(
+        &self,
+        request: CompletionRequest,
+    ) -> Result<CompletionResponse<OllamaResponse>, CompletionError> {
+        let model = self.client.completion_model(&self.model_name);
+        model.completion(request).await
     }
 }
