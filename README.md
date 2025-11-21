@@ -6,6 +6,7 @@
 - Futures (types and traits) `cargo add futures tokio-stream -F tokio-stream/sync`
 - Base AI Layer: `cargo add rig-core -F rig-core/ollama`
 - Backend API: `cargo add axum serde -F serde/derive`
+- Cors Middleware: `cargo add tower-http -F tower-http/cors`
 
 ### Resources
 

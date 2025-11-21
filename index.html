@@ -13,8 +13,16 @@
       if (typeof EventSource !== "undefined") {
         const source = new EventSource("http://localhost:8000/api");
 
-        source.onmessage = (event) =>
-          (document.getElementById("result").innerHTML += event.data + "<br>");
+        document.getElementById("result").innerHTML = "";
+
+        source.onmessage = (event) => {
+          if (event.data == "[done]") {
+            source.close();
+          } else {
+            document.getElementById("result").innerHTML += event.data;
+          }
+        };
+
         source.onerror = (error) => console.error("EventSource error", error);
       } else {
         document.getElementById("result").innerHTML =

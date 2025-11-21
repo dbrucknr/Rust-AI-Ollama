@@ -9,11 +9,8 @@ use axum::{
 };
 use futures::Stream;
 use rig::{
-    OneOrMany,
-    completion::CompletionRequest,
-    message::Message,
-    providers::ollama::Message as OllamaMessage,
-    streaming::{StreamedAssistantContent, StreamingCompletionResponse},
+    OneOrMany, completion::CompletionRequest, message::Message,
+    providers::ollama::Message as OllamaMessage, streaming::StreamedAssistantContent,
 };
 use serde::Deserialize;
 use std::sync::Arc;
@@ -99,29 +96,15 @@ async fn stream_response(
             Ok(chunk) => {
                 let response_content = match chunk {
                     StreamedAssistantContent::Text(text) => text.text,
-                    // ToolCallDelta { delta, .. } => delta,
-                    // Final(final_response) => {
-                    //     // Could serialize final response or just stream text
-                    //     final_response.message.content()
-                    // }
+                    StreamedAssistantContent::Final(_) => String::from("[done]"),
                     _ => "".to_string(), // Skip ToolCall, Reasoning, etc.
                 };
                 // This could be moved into each match with a custom payload
                 Ok(Event::default().data(response_content))
             }
-            Err(_e) => {
-                // You can also include error info if you want
-                Ok(Event::default().data("[error]"))
-            }
+            Err(_e) => Ok(Event::default().data("[error]")),
         }
     });
 
     Ok(Sse::new(sse_stream).keep_alive(KeepAlive::default()))
-
-    // if let Ok(stream) = client.stream(request).await {
-    //     stream.
-    //     // Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
-    // } else {
-    //     Err(ApiError::InternalServerError)
-    // }
 }
