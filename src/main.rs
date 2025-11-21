@@ -17,7 +17,10 @@ pub mod errors;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
+    let cors = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin(Any)
+        .allow_headers(Any);
     let app = Router::new().nest("/api", router()).layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
