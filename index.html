@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Axum Rig SSE PoC</title>
+  </head>
+  <body>
+    <h1>SSE PoC</h1>
+    <div id="result">Waiting for server events...</div>
+
+    <script>
+      if (typeof EventSource !== "undefined") {
+        const source = new EventSource("http://localhost:8000/api");
+
+        source.onmessage = (event) =>
+          (document.getElementById("result").innerHTML = event.data + "<br>");
+        source.onerror = (error) => console.error("EventSource error", error);
+      } else {
+        document.getElementById("result").innerHTML =
+          "This browser doesn't support SSE's (Server Sent Events)";
+      }
+    </script>
+  </body>
+</html>

@@ -1,26 +1,29 @@
 use axum::{
     Extension, Json, Router,
     http::StatusCode,
-    response::{IntoResponse, Response},
-    routing::post,
+    response::{
+        IntoResponse, Response, Sse,
+        sse::{Event, KeepAlive},
+    },
+    routing::{get, post},
 };
-// use futures::Stream;
+use futures::Stream;
 use rig::{
     OneOrMany,
-    completion::{CompletionRequest, CompletionResponse},
+    completion::CompletionRequest,
     message::Message,
-    providers::ollama::{
-        AssistantContent, CompletionResponse as OllamaResponse, Message as OllamaMessage,
-    },
+    providers::ollama::Message as OllamaMessage,
+    streaming::{StreamedAssistantContent, StreamingCompletionResponse},
 };
 use serde::Deserialize;
 use std::sync::Arc;
-// use tokio_stream::{StreamExt, wrappers::BroadcastStream};
+use tokio_stream::StreamExt;
 
 use super::client::OllamaClient;
 
 pub fn router() -> Router {
     Router::new()
+        .route("/", get(stream_response))
         .route("/", post(respond_to_message))
         .layer(Extension(Arc::new(OllamaClient::new())))
 }
@@ -72,20 +75,53 @@ async fn respond_to_message(
     }
 }
 
-// async fn stream_response(
-//     Extension(client): Extension<Arc<OllamaClient>>,
-// ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {
-//     let request = CompletionRequest {
-//         preamble: Some(String::from("You are a humorous friend")),
-//         chat_history: OneOrMany::one(Message::user("Hi")),
-//         documents: Vec::new(),
-//         tools: Vec::new(),
-//         temperature: None,
-//         max_tokens: None,
-//         tool_choice: None,
-//         additional_params: None,
-//     };
+async fn stream_response(
+    Extension(client): Extension<Arc<OllamaClient>>,
+) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, ApiError> {
+    let request = CompletionRequest {
+        preamble: Some(String::from("You are a humorous friend")),
+        chat_history: OneOrMany::one(Message::user("Hi")),
+        documents: Vec::new(),
+        tools: Vec::new(),
+        temperature: None,
+        max_tokens: None,
+        tool_choice: None,
+        additional_params: None,
+    };
 
-//     let result = client.stream(request).await;
-//     Sse::new(stream).keep_alive(KeepAlive::default())
-// }
+    let result = client
+        .stream(request)
+        .await
+        .map_err(|_| ApiError::InternalServerError)?;
+
+    let sse_stream = result.map(|chunk_result| {
+        match chunk_result {
+            Ok(chunk) => {
+                let response_content = match chunk {
+                    StreamedAssistantContent::Text(text) => text.text,
+                    // ToolCallDelta { delta, .. } => delta,
+                    // Final(final_response) => {
+                    //     // Could serialize final response or just stream text
+                    //     final_response.message.content()
+                    // }
+                    _ => "".to_string(), // Skip ToolCall, Reasoning, etc.
+                };
+                // This could be moved into each match with a custom payload
+                Ok(Event::default().data(response_content))
+            }
+            Err(_e) => {
+                // You can also include error info if you want
+                Ok(Event::default().data("[error]"))
+            }
+        }
+    });
+
+    Ok(Sse::new(sse_stream).keep_alive(KeepAlive::default()))
+
+    // if let Ok(stream) = client.stream(request).await {
+    //     stream.
+    //     // Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
+    // } else {
+    //     Err(ApiError::InternalServerError)
+    // }
+}
