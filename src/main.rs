@@ -4,6 +4,7 @@ use std::{error::Error, net::SocketAddr};
 // Third Party Library Crates
 use axum::{Router, serve};
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::api::router;
 
@@ -13,7 +14,8 @@ pub mod client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let app = Router::new().nest("/api", router());
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
+    let app = Router::new().nest("/api", router()).layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
     let listener = TcpListener::bind(addr).await?;

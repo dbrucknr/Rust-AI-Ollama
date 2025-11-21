@@ -14,7 +14,7 @@
         const source = new EventSource("http://localhost:8000/api");
 
         source.onmessage = (event) =>
-          (document.getElementById("result").innerHTML = event.data + "<br>");
+          (document.getElementById("result").innerHTML += event.data + "<br>");
         source.onerror = (error) => console.error("EventSource error", error);
       } else {
         document.getElementById("result").innerHTML =

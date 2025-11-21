@@ -1050,6 +1050,7 @@ dependencies = [
  "serde",
  "tokio",
  "tokio-stream",
+ "tower-http",
 ]
 
 [[package]]
