@@ -1,36 +1,26 @@
-use std::error::Error;
+// Standard Library Crates
+use std::{error::Error, net::SocketAddr};
 
-use futures_util::stream::StreamExt;
+// Third Party Library Crates
+use axum::{Router, serve};
+use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 
-use rig::OneOrMany;
-use rig::client::CompletionClient;
-use rig::completion::{CompletionModel, CompletionRequest, Document};
-use rig::message::Message;
-use rig::providers::ollama::Client;
+use crate::api::router;
 
-// https://docs.rs/rig-core/latest/rig/providers/ollama/index.html#example
+// Local Module Registry
+pub mod api;
+pub mod client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let client = Client::default(); // Uses http://localhost:11434 (Ollama must be running until Docker image is provided)
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
+    let app = Router::new().nest("/api", router()).layer(cors);
 
-    let model = client.completion_model("mistral");
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
+    let listener = TcpListener::bind(addr).await?;
 
-    let request = CompletionRequest {
-        preamble: Some(String::from("You are a humorous friend")),
-        chat_history: OneOrMany::one(Message::user("Hi")),
-        documents: Vec::<Document>::new(),
-        tools: Vec::new(),
-        temperature: None,
-        max_tokens: None,
-        tool_choice: None,
-        additional_params: None,
-    };
+    serve(listener, app).await?;
 
-    let mut stream = model.stream(request).await?;
-
-    while let Some(token) = stream.next().await {
-        print!("{:#?}", token?);
-    }
     Ok(())
 }
