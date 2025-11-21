@@ -13,6 +13,7 @@ use rig::{
         AssistantContent, CompletionResponse as OllamaResponse, Message as OllamaMessage,
     },
 };
+use serde::Deserialize;
 use std::sync::Arc;
 // use tokio_stream::{StreamExt, wrappers::BroadcastStream};
 
@@ -39,12 +40,18 @@ impl IntoResponse for ApiError {
     }
 }
 
+#[derive(Deserialize)]
+struct IncomingMessage {
+    content: String,
+}
+
 async fn respond_to_message(
     Extension(client): Extension<Arc<OllamaClient>>,
+    Json(body): Json<IncomingMessage>,
 ) -> Result<String, ApiError> {
     let request = CompletionRequest {
-        preamble: Some(String::from("You are a humorous friend")),
-        chat_history: OneOrMany::one(Message::user("Hi")),
+        preamble: Some(String::from("You are a helpful and encouraging friend")),
+        chat_history: OneOrMany::one(Message::user(body.content)),
         documents: Vec::new(),
         tools: Vec::new(),
         temperature: None,
